@@ -1,0 +1,14 @@
+{
+  "name": "mydreamtv-server",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo 'No build needed for serverless functions'"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.44.7",
+    "mysql2": "^3.16.0",
+    "zod": "^4.2.1",
+    "aws-sdk": "^2.1692.0"
+  }
+}
