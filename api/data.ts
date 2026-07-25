@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getDb, upsertPlaylist, getAllPlaylists } from "./lib/db";
+import { getDb, upsertPlaylist, getAllPlaylists, getPlaylistByMac } from "./lib/db";
 import { parseM3UText, fetchAndParseM3U } from "./lib/m3u-parser";
 import { getCachedData, setCache, clearCache } from "./lib/data-cache";
 import type { ParsedM3U } from "./lib/m3u-parser";
@@ -64,8 +64,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const data = await loadData();
     const type = (req.query.type as string) || "stats";
+
+    // Handle playlist lookup by MAC
+    if (type === "playlist") {
+      const mac = req.query.mac as string;
+      if (!mac) {
+        res.status(400).json({ error: "mac parameter required" });
+        return;
+      }
+      try {
+        const playlist = await getPlaylistByMac(mac);
+        if (playlist) {
+          res.json({
+            serverName: playlist.serverName,
+            uploadMethod: playlist.uploadMethod,
+            m3uUrl: playlist.m3uUrl,
+            xtreamHost: playlist.xtreamHost,
+            xtreamPort: playlist.xtreamPort,
+            xtreamUsername: playlist.xtreamUsername,
+            lastUpdated: playlist.lastUpdated,
+          });
+        } else {
+          res.status(404).json({ error: "Playlist bulunamadı" });
+        }
+      } catch (e) {
+        console.warn("[Data] Playlist lookup error:", (e as Error).message);
+        res.status(500).json({ error: "Veritabanı hatası" });
+      }
+      return;
+    }
+
+    // Load cached/parsed data for all other types
+    const data = await loadData();
     const category = req.query.category as string;
 
     switch (type) {
@@ -128,13 +159,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       case "wake": {
-        // Simple wake-up endpoint
         res.json({ status: "ok" });
         break;
       }
 
       default: {
-        res.status(400).json({ error: "Unknown type. Use: stats, live-categories, channels, movie-categories, movies, series-categories, series, wake" });
+        res.status(400).json({ error: "Unknown type. Use: stats, live-categories, channels, movie-categories, movies, series-categories, series, playlist, wake" });
         break;
       }
     }
