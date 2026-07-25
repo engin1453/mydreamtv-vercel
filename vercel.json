@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "api/**/*.ts", "use": "@vercel/node" }
-  ]
+  "rewrites": [],
+  "installCommand": "npm install",
+  "buildCommand": "npm install drizzle-orm pg @vercel/node",
+  "framework": null
 }
