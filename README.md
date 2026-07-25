@@ -2,22 +2,36 @@
 
 Bu proje Vercel'e deploy edilmek için hazırlanmıştır.
 
+## Özellikler
+
+- PostgreSQL veritabanı kullanır (çalışan APK ile çakışmaz)
+- Tablo adı: `mydreamtv_playlists` (benzersiz)
+- Vercel Serverless Functions
+
 ## Gerekli Environment Variables
 
 Vercel'de Settings > Environment Variables bölümüne ekleyin:
 
 | Değişken | Açıklama | Örnek |
 |----------|----------|-------|
-| `DATABASE_URL` | MySQL bağlantı URL'si | `mysql://user:pass@host:3306/dbname` |
+| `DATABASE_URL` | PostgreSQL bağlantı URL'si | `postgres://user:pass@host:5432/dbname` |
 | `ADMIN_PASSWORD` | Admin panel şifresi | `19971983` |
 
 ## Deploy Adımları
 
-1. Bu klasörü zip olarak indirin
-2. Vercel'de yeni proje oluşturun
-3. Zip'i Vercel'e yükleyin (Import from Git veya ZIP upload)
-4. Environment variables'ı ekleyin
-5. Deploy
+1. Bu repo'yu Vercel'de import edin
+2. Settings > Environment Variables bölümüne `DATABASE_URL` ve `ADMIN_PASSWORD` ekleyin
+3. Deploy
+
+## DATABASE_URL Nasıl Bulunur
+
+Railway'de:
+1. `clever-adventure` projesine tıklayın
+2. `Postgres` servisine tıklayın
+3. **Variables** sekmesinde **DATABASE_URL**'yi kopyalayın
+4. Vercel'de Environment Variables'a yapıştırın
+
+Bu aynı veritabanını kullanacak ama `mydreamtv_playlists` tablosu oluşturacak — mevcut tablolara zarar vermez.
 
 ## API Endpoints
 
@@ -36,10 +50,3 @@ Vercel'de Settings > Environment Variables bölümüne ekleyin:
 | `GET /api/admin?action=list` | Cihaz listesi |
 | `GET /api/admin?action=stats` | Admin istatistikleri |
 | `/upload` | Yükleme sayfası |
-
-## APK Kullanımı
-
-APK'da sunucu URL'sini Vercel deploy URL'sine değiştirin:
-`https://sizin-projeniz.vercel.app`
-
-Upload sayfası: `https://sizin-projeniz.vercel.app/upload`
