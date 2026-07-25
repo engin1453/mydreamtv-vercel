@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyDreamTV - Playlist Yükleme</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a1628;color:#fff;font-family:system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.container{max-width:520px;width:100%;padding:32px}
+h1{color:#00e5ff;text-align:center;margin-bottom:8px;font-size:28px}
+.subtitle{text-align:center;color:#8899aa;margin-bottom:24px;font-size:14px}
+.tab-row{display:flex;gap:8px;margin-bottom:20px}
+.tab{flex:1;padding:12px;border-radius:8px;text-align:center;cursor:pointer;background:#1a2a3a;color:#8899aa;border:none;font-size:14px;font-weight:bold}
+.tab.active{background:#00e5ff;color:#000}
+.field{margin-bottom:12px}
+.field label{display:block;color:#aabbcc;margin-bottom:4px;font-size:13px}
+.field input{width:100%;padding:12px;background:#0d1b2a;border:1px solid #1a3a5a;border-radius:8px;color:#fff;font-size:14px;outline:none}
+.field input:focus{border-color:#00e5ff}
+.field textarea{width:100%;padding:12px;background:#0d1b2a;border:1px solid #1a3a5a;border-radius:8px;color:#fff;font-size:13px;min-height:80px;resize:vertical;outline:none;font-family:monospace}
+.field textarea:focus{border-color:#00e5ff}
+.field input[type="file"]{padding:10px;font-size:13px;color:#aabbcc}
+.file-hint{color:#607d8b;font-size:12px;margin-top:4px}
+.submit{width:100%;padding:16px;background:#00e5ff;color:#000;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:8px}
+.submit:hover{opacity:0.9}
+.submit:disabled{background:#334455;color:#8899aa;cursor:not-allowed}
+.result{margin-top:16px;padding:12px;border-radius:8px;text-align:center;font-size:14px}
+.result.success{background:rgba(76,175,80,0.15);border:1px solid #4caf50;color:#81c784}
+.result.error{background:rgba(244,67,54,0.15);border:1px solid #f44336;color:#ef9a9a}
+.info{margin-top:24px;padding:16px;background:#0d1b2a;border-radius:8px;border:1px solid #1a3a5a;font-size:13px;line-height:1.8;color:#aabbcc}
+.info strong{color:#00e5ff}
+.progress{margin-top:8px;color:#80deea;font-size:13px;display:none}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>MyDreamTV</h1>
+  <p class="subtitle">MAC Adresi ile Playlist Yükleme</p>
+  
+  <div class="tab-row">
+    <button class="tab active" onclick="switchTab('file')">M3U Dosya</button>
+    <button class="tab" onclick="switchTab('url')">M3U URL</button>
+    <button class="tab" onclick="switchTab('xtream')">Xtream Codes</button>
+  </div>
+  
+  <div class="field">
+    <label>MAC Adresi *</label>
+    <input id="mac" placeholder="AA:BB:CC:DD:EE:FF" autocomplete="off">
+  </div>
+  
+  <div class="field">
+    <label>Sunucu Adı *</label>
+    <input id="server" placeholder="Örn: Evdeki TV">
+  </div>
+  
+  <div id="file-fields">
+    <div class="field">
+      <label>M3U Dosyası Yükle *</label>
+      <input id="m3uFile" type="file" accept=".m3u,.m3u8,.txt">
+      <p class="file-hint">M3U dosyanızı IPTV sağlayıcınızdan indirin ve buraya yükleyin</p>
+    </div>
+  </div>
+  
+  <div id="url-fields" style="display:none">
+    <div class="field">
+      <label>M3U URL *</label>
+      <textarea id="m3uUrl" placeholder="http://dns.xyz:8080/get.php?username=...&password=...&type=m3u_plus"></textarea>
+      <p class="file-hint">Not: URL'den çekme bazen çalışmayabilir. Çalışmazsa dosya olarak yükleyin.</p>
+    </div>
+  </div>
+  
+  <div id="xtream-fields" style="display:none">
+    <div class="field"><label>Host *</label><input id="host" placeholder="http://dns.xyz"></div>
+    <div class="field"><label>Port *</label><input id="port" placeholder="8080" type="number"></div>
+    <div class="field"><label>Kullanıcı Adı *</label><input id="username" placeholder="username"></div>
+    <div class="field"><label>Şifre *</label><input id="password" type="password" placeholder="password"></div>
+  </div>
+  
+  <button class="submit" id="submitBtn" onclick="handleSubmit()">Gönder</button>
+  <div id="progress" class="progress"></div>
+  <div id="result"></div>
+  
+  <div class="info">
+    <strong>Nasıl Kullanılır?</strong><br>
+    1. TV uygulamanızı açın ve MAC adresini not edin.<br>
+    2. MAC adresini yukarıdaki alana girin.<br>
+    3. <strong>M3U Dosya</strong> sekmesini seçip M3U dosyanızı yükleyin (önerilir).<br>
+    4. Gönder butonuna basın.
+  </div>
+</div>
+
+<script>
+let currentTab='file';
+function switchTab(t){
+  currentTab=t;
+  document.querySelectorAll('.tab').forEach((b,i)=>{
+    if(t==='file'&&i===0) b.classList.add('active');
+    else if(t==='url'&&i===1) b.classList.add('active');
+    else if(t==='xtream'&&i===2) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+  document.getElementById('file-fields').style.display=t==='file'?'block':'none';
+  document.getElementById('url-fields').style.display=t==='url'?'block':'none';
+  document.getElementById('xtream-fields').style.display=t==='xtream'?'block':'none';
+}
+
+function parseM3U(text) {
+  const lines = text.split('\n');
+  const liveCategories = new Set();
+  const liveChannels = [];
+  const movieCategories = new Set();
+  const movies = [];
+  const seriesCategories = new Set();
+  const series = [];
+  let currentName = "", currentGroup = "", currentLogo = "";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.startsWith('#EXTINF')) {
+      const nameMatch = line.match(/tvg-name="([^"]*)"|,(.+)$/);
+      currentName = nameMatch?.[1] || nameMatch?.[2] || "";
+      const groupMatch = line.match(/group-title="([^"]*)"/);
+      currentGroup = groupMatch?.[1] || "";
+      const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+      currentLogo = logoMatch?.[1] || "";
+    } else if (line && !line.startsWith('#')) {
+      if (!currentGroup || !line.includes('://')) continue;
+      const groupUpper = currentGroup.toUpperCase();
+      const isTurkish = currentGroup.includes('TR') || currentGroup.includes('tr');
+      const hasLiveMarker = currentGroup.includes('➧➧') || currentGroup.includes('►►') || currentGroup.includes('>>>');
+      const hasMovieMarker = currentGroup.includes('∞') || groupUpper.includes('FILM') || groupUpper.includes('FİLM') || groupUpper.includes('MOVIE') || groupUpper.includes('VIZYON');
+      const hasSeriesMarker = groupUpper.includes('SERI') || groupUpper.includes('SEZON') || groupUpper.includes('SEASON') || currentGroup.toLowerCase().includes('dizi');
+      
+      let isLive = false, isMovie = false, isDizi = false;
+      if (hasSeriesMarker) isDizi = true;
+      else if (hasMovieMarker) isMovie = true;
+      else if (hasLiveMarker) isLive = true;
+      
+      if (!isLive && !isMovie && !isDizi) {
+        const liveKeywords = ['KANAL', 'HABER', 'SPOR', 'SPORT', 'MUZIK', 'COCUK', 'BELGESEL', 'ULUSAL'];
+        if (liveKeywords.some(kw => groupUpper.includes(kw))) isLive = true;
+      }
+      
+      if (isTurkish) {
+        if (isLive) { liveCategories.add(currentGroup); liveChannels.push({ name: currentName, url: line, group: currentGroup, logo: currentLogo }); }
+        else if (isDizi) { seriesCategories.add(currentGroup); series.push({ name: currentName, url: line, group: currentGroup, logo: currentLogo }); }
+        else if (isMovie) { movieCategories.add(currentGroup); movies.push({ name: currentName, url: line, group: currentGroup, logo: currentLogo }); }
+      }
+    }
+  }
+  return { liveCategories: [...liveCategories], liveChannels, movieCategories: [...movieCategories], movies, seriesCategories: [...seriesCategories], series };
+}
+
+async function handleSubmit(){
+  const mac=document.getElementById('mac').value.trim();
+  const server=document.getElementById('server').value.trim();
+  const btn=document.getElementById('submitBtn');
+  const progress=document.getElementById('progress');
+  const result=document.getElementById('result');
+  result.innerHTML='';
+  progress.style.display='none';
+  if(!mac||!server){result.innerHTML='<div class="result error">MAC Adresi ve Sunucu Adı zorunludur.</div>';return;}
+  btn.disabled=true;btn.textContent='Gönderiliyor...';
+  
+  try{
+    const base=window.location.origin;
+    
+    if(currentTab==='file'){
+      const fileInput=document.getElementById('m3uFile');
+      if(!fileInput.files||fileInput.files.length===0){result.innerHTML='<div class="result error">M3U dosyası seçin.</div>';btn.disabled=false;btn.textContent='Gönder';return;}
+      
+      progress.style.display='block';
+      progress.textContent='Dosya okunuyor ve parse ediliyor...';
+      
+      const file=fileInput.files[0];
+      const text=await file.text();
+      progress.textContent='Parse ediliyor ('+Math.round(text.length/1024)+'KB)...';
+      
+      const parsed=parseM3U(text);
+      progress.textContent='Sunucuya gönderiliyor ('+parsed.liveChannels.length+' kanal, '+parsed.movies.length+' film)...';
+      
+      const res=await fetch(base+'/api/upload',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          macAddress:mac,
+          serverName:server,
+          liveCategories:parsed.liveCategories,
+          liveChannels:parsed.liveChannels,
+          movieCategories:parsed.movieCategories,
+          movies:parsed.movies,
+          seriesCategories:parsed.seriesCategories,
+          series:parsed.series,
+          totalLines:text.split('\n').length
+        })
+      });
+      
+      if(res.ok){
+        result.innerHTML='<div class="result success">✓ Başarılı! '+server+' sunucusu yüklendi.<br>'+parsed.liveCategories.length+' kategori, '+parsed.liveChannels.length+' kanal, '+parsed.movies.length+' film, '+parsed.series.length+' dizi</div>';
+      }else{
+        const d=await res.json();
+        result.innerHTML='<div class="result error">Hata: '+(d.error||JSON.stringify(d))+'</div>';
+      }
+    }else if(currentTab==='url'){
+      const m3uUrl=document.getElementById('m3uUrl').value.trim();
+      if(!m3uUrl){result.innerHTML='<div class="result error">M3U URL zorunludur.</div>';btn.disabled=false;btn.textContent='Gönder';return;}
+      progress.style.display='block';
+      progress.textContent='Sunucuya gönderiliyor...';
+      
+      const res = await fetch(base+'/api/upload-m3u',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({macAddress:mac,serverName:server,m3uUrl:m3uUrl})});
+      if(res.ok){result.innerHTML='<div class="result success">✓ Başarılı! '+server+' sunucusu '+mac+' MAC adresine yüklendi.</div>';}
+      else{const d=await res.json();result.innerHTML='<div class="result error">Hata: '+JSON.stringify(d)+'</div>';}
+    }else{
+      const host=document.getElementById('host').value.trim();
+      const port=document.getElementById('port').value.trim();
+      const username=document.getElementById('username').value.trim();
+      const password=document.getElementById('password').value;
+      if(!host||!port||!username||!password){result.innerHTML='<div class="result error">Tüm Xtream alanları zorunludur.</div>';btn.disabled=false;btn.textContent='Gönder';return;}
+      
+      const res = await fetch(base+'/api/upload-xtream',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({macAddress:mac,serverName:server,host:host,port:port,username:username,password:password})});
+      if(res.ok){result.innerHTML='<div class="result success">✓ Başarılı! '+server+' sunucusu '+mac+' MAC adresine yüklendi.</div>';}
+      else{const d=await res.json();result.innerHTML='<div class="result error">Hata: '+JSON.stringify(d)+'</div>';}
+    }
+  }catch(e){result.innerHTML='<div class="result error">Bağlantı hatası: '+e.message+'</div>';}
+  progress.style.display='none';
+  btn.disabled=false;btn.textContent='Gönder';
+}
+</script>
+</body>
+</html>
